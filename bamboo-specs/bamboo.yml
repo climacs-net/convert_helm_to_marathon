@@ -12,13 +12,16 @@ stages:
         tasks:
           - script:
               description: Extract and Convert Helm to Marathon JSON
+              environment:
+                variables:
+                  BAMBOO_BUILD_WORKING_DIRECTORY: ${bamboo.build.working.directory}
               scriptBody: |
                 # Ensure the script is executable
                 chmod +x convert_helm_to_marathon.py
                 # Run the conversion script
                 python3 convert_helm_to_marathon.py
                 # Check if marathon.json is created
-                if [ -f "/home/ubuntu/bamboo-agent-home/xml-data/build-dir/DEM2-CONVERT-BC/marathon.json" ]; then
+                if [ -f "${bamboo.build.working.directory}/marathon.json" ]; then
                   echo "marathon.json successfully created."
                 else
                   echo "marathon.json not found!"
@@ -28,7 +31,7 @@ stages:
               description: List Directory Contents
               scriptBody: |
                 echo "Listing contents of the build directory:"
-                ls -l /home/ubuntu/bamboo-agent-home/xml-data/build-dir/DEM2-CONVERT-BC
+                ls -l ${bamboo.build.working.directory}
 
   - name: Package and Upload
     jobs:
@@ -38,8 +41,8 @@ stages:
           - script:
               description: Package the Converted Files
               scriptBody: |
-                if [ -f "/home/ubuntu/bamboo-agent-home/xml-data/build-dir/DEM2-CONVERT-BC/marathon.json" ]; then
-                  tar -czvf converted_chart.tgz -C /home/ubuntu/bamboo-agent-home/xml-data/build-dir/DEM2-CONVERT-BC marathon.json
+                if [ -f "${bamboo.build.working.directory}/marathon.json" ]; then
+                  tar -czvf ${bamboo.build.working.directory}/converted_chart.tgz -C ${bamboo.build.working.directory} marathon.json
                   echo "Tarball successfully created."
                 else
                   echo "marathon.json not found!"
@@ -49,9 +52,9 @@ stages:
           - script:
               description: Upload to Nexus
               scriptBody: |
-                if [ -f "converted_chart.tgz" ]; then
+                if [ -f "${bamboo.build.working.directory}/converted_chart.tgz" ]; then
                   curl -u bamboonexus:VhaG0ng51mplengpASS \
-                  -T converted_chart.tgz \
+                  -T ${bamboo.build.working.directory}/converted_chart.tgz \
                   http://nexusdemo.climacs.net:8081/repository/bamboodemo/ \
                   -v
                   echo "Upload to Nexus successful."
