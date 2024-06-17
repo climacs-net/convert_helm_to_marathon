@@ -84,7 +84,7 @@ def main():
     input_tgz = 'ingress-nginx-4.0.6.tgz'
     extract_path = 'extracted_chart'
     values_file = os.path.join(extract_path, 'ingress-nginx', 'values.yaml')
-    output_json = 'marathon.json'
+    output_json = '/home/ubuntu/bamboo-agent-home/xml-data/build-dir/DEM2-CONVERT-BC/marathon.json'
     output_tgz = 'converted_chart.tgz'
 
     # Step 1: Extract the tarball
