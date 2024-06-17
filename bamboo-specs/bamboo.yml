@@ -1,0 +1,87 @@
+---
+version: 2
+plan:
+  project-key: DEM2
+  key: CONVERT
+  name: Convert Helm to Marathon JSON
+  description: Convert Helm to Marathon JSON
+stages:
+- Default Stage:
+    manual: false
+    final: false
+    jobs:
+    - build and convert
+    - package and upload
+build and convert:
+  key: BC
+  description: build and convert
+  tasks:
+  - checkout:
+      force-clean-build: false
+      description: Checkout Default Repository
+  - script:
+      interpreter: SHELL
+      scripts:
+      - python3 convert_helm_to_marathon.py
+      description: Extract and Convert Helm to Marathon JSON
+  artifact-subscriptions: []
+package and upload:
+  key: PU
+  description: package and upload
+  tasks:
+  - checkout:
+      force-clean-build: false
+      description: Checkout Default Repository
+  - script:
+      interpreter: SHELL
+      scripts:
+      - tar -czvf converted_chart.tgz marathon.json
+      description: Package the Converted Filestar -czvf converted_chart.tgz marathon.json
+  - script:
+      interpreter: SHELL
+      scripts:
+      - |-
+        curl -u bamboonexus:VhaG0ng51mplengpASS \
+        -T converted_chart.tgz \
+        http://nexusdemo.climacs.net:8081/repository/bamboodemo/ \
+        -v
+      description: Upload to Nexus
+  artifact-subscriptions: []
+repositories:
+- helmchart2marathon:
+    scope: global
+triggers:
+- polling:
+    period: '180'
+branches:
+  create: manually
+  delete: never
+  link-to-jira: true
+notifications: []
+labels: []
+dependencies:
+  require-all-stages-passing: false
+  enabled-for-branches: true
+  block-strategy: none
+  plans: []
+other:
+  concurrent-build-plugin: system-default
+---
+version: 2
+plan:
+  key: DEM2-CONVERT
+plan-permissions:
+- roles:
+  - logged-in
+  - anonymous
+  permissions:
+  - view
+- users:
+  - bamboo14344
+  permissions:
+  - view
+  - edit
+  - build
+  - clone
+  - admin
+  - view-configuration
