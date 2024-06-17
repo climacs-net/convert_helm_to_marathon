@@ -67,6 +67,8 @@ def convert_values_to_marathon(values_path, output_path):
     # Verify the output file was created
     if not os.path.exists(output_path):
         raise FileNotFoundError(f"Failed to create {output_path}")
+    else:
+        print(f"{output_path} successfully created.")
 
 # Re-package the files into a new tarball
 def create_tgz(output_tgz, files):
