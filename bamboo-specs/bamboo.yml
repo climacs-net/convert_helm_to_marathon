@@ -1,6 +1,6 @@
 version: 2
 plan:
-  project-key: DEMO
+  project-key: DEMO2
   key: CONVERT
   name: Convert Helm to Marathon JSON
 
@@ -26,11 +26,10 @@ stages:
                 else
                   echo "marathon.json not found!"
                   exit 1
-                fi
           - script:
               description: List Directory Contents
               scriptBody: |
-                echo "Listing contents of the build directory:"
+                echo "Listing contents of the build directory after conversion:"
                 ls -l ${bamboo_build_working_directory}
 
   - name: Package and Upload
@@ -38,6 +37,11 @@ stages:
       - key: PACKAGE
         name: Package and Upload
         tasks:
+          - script:
+              description: List Directory Contents
+              scriptBody: |
+                echo "Listing contents of the build directory before packaging:"
+                ls -l ${bamboo_build_working_directory}
           - script:
               description: Package the Converted Files
               scriptBody: |
@@ -47,8 +51,6 @@ stages:
                 else
                   echo "marathon.json not found!"
                   exit 1
-                fi
-
           - script:
               description: Upload to Nexus
               scriptBody: |
@@ -61,4 +63,3 @@ stages:
                 else
                   echo "converted_chart.tgz not found!"
                   exit 1
-                fi
