@@ -1,0 +1,130 @@
+---
+version: 2
+plan:
+  project-key: DEM2
+  key: CONVERT
+  name: Convert Helm to Marathon JSON
+  description: Convert Helm to Marathon JSON
+stages:
+- Default Stage:
+    manual: false
+    final: false
+    jobs:
+    - package and upload
+package and upload:
+  key: PU
+  description: package and upload
+  tasks:
+  - checkout:
+      force-clean-build: false
+      description: Checkout Default Repository
+  - script:
+      interpreter: SHELL
+      scripts:
+      - |-
+        #!/bin/sh
+        # Setting up the environment variables
+        export bamboo_build_working_directory=${bamboo.build.working.directory}
+
+        # Run the conversion script
+        python3 convert_helm_to_marathon.py
+
+        # Check if marathon.json is created
+        if [ -f "${bamboo_build_working_directory}/marathon.json" ]; then
+          echo "marathon.json successfully created."
+        else
+          echo "marathon.json not found!"
+          exit 1
+        fi
+      description: convert helm to marathon
+  - script:
+      interpreter: SHELL
+      scripts:
+      - |-
+        #!/bin/sh
+        # Print the working directory and its contents for verification
+        echo "Bamboo build working directory: ${bamboo_build_working_directory}"
+        echo "Contents of the bamboo build working directory:"
+        ls -la ${bamboo_build_working_directory}
+
+        # Check if marathon.json exists and create the tarball
+        if [ -f "${bamboo_build_working_directory}/marathon.json" ]; then
+          tar -czvf ${bamboo_build_working_directory}/converted_chart.tgz -C ${bamboo_build_working_directory} marathon.json
+          echo "Tarball successfully created."
+        else
+          echo "marathon.json not found in ${bamboo_build_working_directory}."
+          exit 1
+        fi
+      description: Tar marathon.json
+  - script:
+      interpreter: SHELL
+      scripts:
+      - |-
+        #!/bin/sh
+        # Check if the tarball exists and upload it to Nexus
+        if [ -f "${bamboo_build_working_directory}/converted_chart.tgz" ]; then
+          curl -u bamboonexus:VhaG0ng51mplengpASS \
+          -T ${bamboo_build_working_directory}/converted_chart.tgz \
+          http://nexusdemo.climacs.net:8081/repository/bambooraw/ \
+          -v
+          echo "Upload to Nexus successful."
+        else
+          echo "converted_chart.tgz not found in ${bamboo_build_working_directory}."
+          exit 1
+        fi
+      description: Upload to Nexus
+  artifact-subscriptions: []
+repositories:
+- helmchart2marathon:
+    type: github
+    base-url: https://github.com
+    repository: climacs-net/convert_helm_to_marathon
+    branch: main
+    user: climacs-net
+    password: BAMSCRT@0@0@rtt+BMZXbSwPCc6Eo/fuNYn/LNUG1tm/vn+NZ4agk64veaJRSZdevF8zUHsID5p8
+    command-timeout-minutes: '180'
+    lfs: false
+    verbose-logs: false
+    use-shallow-clones: false
+    cache-on-agents: true
+    submodules: false
+    ssh-key-applies-to-submodules: true
+    fetch-all: false
+    viewer:
+      com.atlassian.bamboo.plugins.atlassian-bamboo-plugin-git:githubViewer: {}
+triggers:
+- polling:
+    period: '180'
+branches:
+  create: manually
+  delete: never
+  link-to-jira: true
+notifications: []
+labels: []
+dependencies:
+  require-all-stages-passing: false
+  enabled-for-branches: true
+  block-strategy: none
+  plans: []
+other:
+  concurrent-build-plugin: system-default
+---
+version: 2
+plan:
+  key: DEM2-CONVERT
+plan-permissions:
+- roles:
+  - logged-in
+  - anonymous
+  permissions:
+  - view
+- users:
+  - bamboo14344
+  permissions:
+  - view
+  - edit
+  - build
+  - clone
+  - admin
+  - view-configuration
+...
