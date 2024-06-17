@@ -17,6 +17,13 @@ stages:
                 chmod +x convert_helm_to_marathon.py
                 # Run the conversion script
                 python3 convert_helm_to_marathon.py
+                # Check if marathon.json is created
+                if [ -f "marathon.json" ]; then
+                  echo "marathon.json successfully created."
+                else
+                  echo "marathon.json not found!"
+                  exit 1
+                fi
 
   - name: Package and Upload
     jobs:
@@ -28,6 +35,7 @@ stages:
               scriptBody: |
                 if [ -f "marathon.json" ]; then
                   tar -czvf converted_chart.tgz marathon.json
+                  echo "Tarball successfully created."
                 else
                   echo "marathon.json not found!"
                   exit 1
@@ -41,6 +49,7 @@ stages:
                   -T converted_chart.tgz \
                   http://nexusdemo.climacs.net:8081/repository/bamboodemo/ \
                   -v
+                  echo "Upload to Nexus successful."
                 else
                   echo "converted_chart.tgz not found!"
                   exit 1
