@@ -63,12 +63,19 @@ def convert_values_to_marathon(values_path, output_path):
 
     with open(output_path, 'w') as f:
         json.dump(marathon_json, f, indent=2)
+    
+    # Verify the output file was created
+    if not os.path.exists(output_path):
+        raise FileNotFoundError(f"Failed to create {output_path}")
 
 # Re-package the files into a new tarball
 def create_tgz(output_tgz, files):
     with tarfile.open(output_tgz, "w:gz") as tar:
         for file in files:
-            tar.add(file, arcname=os.path.basename(file))
+            if os.path.exists(file):
+                tar.add(file, arcname=os.path.basename(file))
+            else:
+                raise FileNotFoundError(f"{file} does not exist and cannot be added to the tarball")
 
 # Main function
 def main():
