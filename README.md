@@ -24,8 +24,21 @@ The infrastructure for this project is provisioned using Terraform. The setup in
 ## Setup Instructions
 
 ### Server Creation (via Terraform)
-
+   
 1. Clone the repository:
    ```bash
    git clone https://github.com/climacs-net/convert_helm_to_marathon.git
    cd convert_helm_to_marathon
+
+2. Initialize and apply the Terraform configuration:
+   ```bash
+   terraform init
+   terraform apply
+
+3. Run the Ansible playbook for Bamboo installation:
+   ```bash
+   ansible-playbook -i inventory bamboo_playbook.yml
+
+4. Run the Ansible playbook for Nexus installation:
+   ```bash
+   ansible-playbook -i inventory nexus_playbook.yml 
