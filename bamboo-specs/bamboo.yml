@@ -1,139 +1,91 @@
 version: 2
 plan:
-  project-key: DEM2
+  project-key: dem2
   key: CONVERT
   name: Convert Helm to Marathon JSON
   description: Convert Helm to Marathon JSON
 stages:
-  - name: Default Stage
+- Default Stage:
     manual: false
     final: false
     jobs:
-      - build and convert
-      - package and upload
-
-jobs:
-  - name: build and convert
-    key: BC
-    description: Build and Convert
-    tasks:
-      - checkout:
-          force-clean-build: false
-          description: Checkout Default Repository
-      - script:
-          interpreter: SHELL
-          description: Extract and Convert Helm to Marathon JSON
-          environment:
-            variables:
-              bamboo_build_working_directory: ${bamboo.build.working.directory}
-          scriptBody: |
-            # Ensure the script is executable
-            chmod +x convert_helm_to_marathon.py
-            # Run the conversion script
-            python3 convert_helm_to_marathon.py
-            # Check if marathon.json is created
-            if [ -f "${bamboo_build_working_directory}/marathon.json" ]; then
-              echo "marathon.json successfully created."
-            else
-              echo "marathon.json not found!"
-              exit 1
-      - script:
-          description: List Directory Contents After Conversion
-          scriptBody: |
-            echo "Listing contents of the build directory after conversion:"
-            ls -l ${bamboo_build_working_directory}
-
-  - name: package and upload
-    key: PU
-    description: Package and Upload
-    tasks:
-      - checkout:
-          force-clean-build: false
-          description: Checkout Default Repository
-      - script:
-          interpreter: SHELL
-          description: Package the Converted Files
-          environment:
-            variables:
-              bamboo_build_working_directory: ${bamboo.build.working.directory}
-          scriptBody: |
-            # List contents of the build directory before packaging
-            echo "Listing contents of the build directory before packaging:"
-            ls -l ${bamboo_build_working_directory}
-            # Package the files
-            if [ -f "${bamboo_build_working_directory}/marathon.json" ]; then
-              tar -czvf ${bamboo_build_working_directory}/converted_chart.tgz -C ${bamboo_build_working_directory} marathon.json
-              echo "Tarball successfully created."
-            else
-              echo "marathon.json not found!"
-              exit 1
-      - script:
-          interpreter: SHELL
-          description: Upload to Nexus
-          scriptBody: |
-            if [ -f "${bamboo_build_working_directory}/converted_chart.tgz" ]; then
-              curl -u bamboonexus:VhaG0ng51mplengpASS \
-              -T ${bamboo_build_working_directory}/converted_chart.tgz \
-              http://nexusdemo.climacs.net:8081/repository/bamboodemo/ \
-              -v
-              echo "Upload to Nexus successful."
-            else
-              echo "converted_chart.tgz not found!"
-              exit 1
-
+    - build and convert
+    - package and upload
+build and convert:
+  key: BC
+  description: build and convert
+  tasks:
+  - checkout:
+      force-clean-build: false
+      description: Checkout Default Repository
+  - script:
+      interpreter: SHELL
+      scripts:
+      - python3 convert_helm_to_marathon.py
+      description: Extract and Convert Helm to Marathon JSON
+  artifact-subscriptions: []
+package and upload:
+  key: PU
+  description: package and upload
+  tasks:
+  - checkout:
+      force-clean-build: false
+      description: Checkout Default Repository
+  - script:
+      interpreter: SHELL
+      scripts:
+      - tar -czvf ${bamboo_build_working_directory}/converted_chart.tgz -C ${bamboo_build_working_directory} marathon.json
+      description: Package the Converted Files
+  - script:
+      interpreter: SHELL
+      scripts:
+      - |-
+        curl -u bamboonexus:VhaG0ng51mplengpASS \
+        -T ${bamboo_build_working_directory}/converted_chart.tgz \
+        http://nexusdemo.climacs.net:8081/repository/bamboodemo/ \
+        -v
+      description: Upload to Nexus
+  artifact-subscriptions: []
 repositories:
-  - helmchart2marathon:
-      type: github
-      base-url: https://github.com
-      repository: climacs-net/convert_helm_to_marathon
-      branch: main
-      user: climacs-net
-      password: BAMSCRT@0@0@rtt+BMZXbSwPCc6Eo/fuNYn/LNUG1tm/vn+NZ4agk64veaJRSZdevF8zUHsID5p8
-      command-timeout-minutes: '180'
-      lfs: false
-      verbose-logs: false
-      use-shallow-clones: false
-      cache-on-agents: true
-      submodules: false
-      ssh-key-applies-to-submodules: true
-      fetch-all: false
-      viewer:
-        com.atlassian.bamboo.plugins.atlassian-bamboo-plugin-git:githubViewer: {}
-
+- helmchart2marathon:
+    type: github
+    base-url: https://github.com
+    repository: climacs-net/convert_helm_to_marathon
+    branch: main
+    user: climacs-net
+    password: BAMSCRT@0@0@rtt+BMZXbSwPCc6Eo/fuNYn/LNUG1tm/vn+NZ4agk64veaJRSZdevF8zUHsID5p8
+    command-timeout-minutes: '180'
+    lfs: false
+    verbose-logs: false
+    use-shallow-clones: false
+    cache-on-agents: true
+    submodules: false
+    ssh-key-applies-to-submodules: true
+    fetch-all: false
+    viewer:
+      com.atlassian.bamboo.plugins.atlassian-bamboo-plugin-git:githubViewer: {}
 triggers:
-  - polling:
-      period: '180'
-
+- polling:
+    period: '180'
 branches:
   create: manually
   delete: never
   link-to-jira: true
-
 notifications: []
-
 labels: []
-
 dependencies:
   require-all-stages-passing: false
   enabled-for-branches: true
   block-strategy: none
   plans: []
-
 other:
   concurrent-build-plugin: system-default
-
+---
+version: 2
+plan:
+  key: DEM2-CONVERT
 plan-permissions:
-  - roles:
-    - logged-in
-    - anonymous
-    permissions:
-    - view
-  - users:
-    - bamboo14344
-    permissions:
-    - view
-    - edit
-    - build
-    - clone
-    - admin
-    - view-configuration
+- roles:
+  - logged-in
+  - anonymous
+  permissions​⬤
