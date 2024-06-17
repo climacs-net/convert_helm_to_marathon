@@ -27,7 +27,7 @@ stages:
                   echo "marathon.json not found!"
                   exit 1
           - script:
-              description: List Directory Contents
+              description: List Directory Contents After Conversion
               scriptBody: |
                 echo "Listing contents of the build directory after conversion:"
                 ls -l ${bamboo_build_working_directory}
@@ -38,7 +38,7 @@ stages:
         name: Package and Upload
         tasks:
           - script:
-              description: List Directory Contents
+              description: List Directory Contents Before Packaging
               scriptBody: |
                 echo "Listing contents of the build directory before packaging:"
                 ls -l ${bamboo_build_working_directory}
