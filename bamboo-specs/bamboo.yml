@@ -1,65 +1,139 @@
 version: 2
 plan:
-  project-key: demo2
+  project-key: DEM2
   key: CONVERT
   name: Convert Helm to Marathon JSON
-
+  description: Convert Helm to Marathon JSON
 stages:
-  - name: Build and Convert
+  - name: Default Stage
+    manual: false
+    final: false
     jobs:
-      - key: BUILD
-        name: Build and Convert
-        tasks:
-          - script:
-              description: Extract and Convert Helm to Marathon JSON
-              environment:
-                variables:
-                  bamboo_build_working_directory: ${bamboo.build.working.directory}
-              scriptBody: |
-                # Ensure the script is executable
-                chmod +x convert_helm_to_marathon.py
-                # Run the conversion script
-                python3 convert_helm_to_marathon.py
-                # Check if marathon.json is created
-                if [ -f "${bamboo_build_working_directory}/marathon.json" ]; then
-                  echo "marathon.json successfully created."
-                else
-                  echo "marathon.json not found!"
-                  exit 1
-          - script:
-              description: List Directory Contents After Conversion
-              scriptBody: |
-                echo "Listing contents of the build directory after conversion:"
-                ls -l ${bamboo_build_working_directory}
+      - build and convert
+      - package and upload
 
-  - name: Package and Upload
-    jobs:
-      - key: PACKAGE
-        name: Package and Upload
-        tasks:
-          - script:
-              description: List Directory Contents Before Packaging
-              scriptBody: |
-                echo "Listing contents of the build directory before packaging:"
-                ls -l ${bamboo_build_working_directory}
-          - script:
-              description: Package the Converted Files
-              scriptBody: |
-                if [ -f "${bamboo_build_working_directory}/marathon.json" ]; then
-                  tar -czvf ${bamboo_build_working_directory}/converted_chart.tgz -C ${bamboo_build_working_directory} marathon.json
-                  echo "Tarball successfully created."
-                else
-                  echo "marathon.json not found!"
-                  exit 1
-          - script:
-              description: Upload to Nexus
-              scriptBody: |
-                if [ -f "${bamboo_build_working_directory}/converted_chart.tgz" ]; then
-                  curl -u bamboonexus:VhaG0ng51mplengpASS \
-                  -T ${bamboo_build_working_directory}/converted_chart.tgz \
-                  http://nexusdemo.climacs.net:8081/repository/bamboodemo/ \
-                  -v
-                  echo "Upload to Nexus successful."
-                else
-                  echo "converted_chart.tgz not found!"
-                  exit 1
+jobs:
+  - name: build and convert
+    key: BC
+    description: Build and Convert
+    tasks:
+      - checkout:
+          force-clean-build: false
+          description: Checkout Default Repository
+      - script:
+          interpreter: SHELL
+          description: Extract and Convert Helm to Marathon JSON
+          environment:
+            variables:
+              bamboo_build_working_directory: ${bamboo.build.working.directory}
+          scriptBody: |
+            # Ensure the script is executable
+            chmod +x convert_helm_to_marathon.py
+            # Run the conversion script
+            python3 convert_helm_to_marathon.py
+            # Check if marathon.json is created
+            if [ -f "${bamboo_build_working_directory}/marathon.json" ]; then
+              echo "marathon.json successfully created."
+            else
+              echo "marathon.json not found!"
+              exit 1
+      - script:
+          description: List Directory Contents After Conversion
+          scriptBody: |
+            echo "Listing contents of the build directory after conversion:"
+            ls -l ${bamboo_build_working_directory}
+
+  - name: package and upload
+    key: PU
+    description: Package and Upload
+    tasks:
+      - checkout:
+          force-clean-build: false
+          description: Checkout Default Repository
+      - script:
+          interpreter: SHELL
+          description: Package the Converted Files
+          environment:
+            variables:
+              bamboo_build_working_directory: ${bamboo.build.working.directory}
+          scriptBody: |
+            # List contents of the build directory before packaging
+            echo "Listing contents of the build directory before packaging:"
+            ls -l ${bamboo_build_working_directory}
+            # Package the files
+            if [ -f "${bamboo_build_working_directory}/marathon.json" ]; then
+              tar -czvf ${bamboo_build_working_directory}/converted_chart.tgz -C ${bamboo_build_working_directory} marathon.json
+              echo "Tarball successfully created."
+            else
+              echo "marathon.json not found!"
+              exit 1
+      - script:
+          interpreter: SHELL
+          description: Upload to Nexus
+          scriptBody: |
+            if [ -f "${bamboo_build_working_directory}/converted_chart.tgz" ]; then
+              curl -u bamboonexus:VhaG0ng51mplengpASS \
+              -T ${bamboo_build_working_directory}/converted_chart.tgz \
+              http://nexusdemo.climacs.net:8081/repository/bamboodemo/ \
+              -v
+              echo "Upload to Nexus successful."
+            else
+              echo "converted_chart.tgz not found!"
+              exit 1
+
+repositories:
+  - helmchart2marathon:
+      type: github
+      base-url: https://github.com
+      repository: climacs-net/convert_helm_to_marathon
+      branch: main
+      user: climacs-net
+      password: BAMSCRT@0@0@rtt+BMZXbSwPCc6Eo/fuNYn/LNUG1tm/vn+NZ4agk64veaJRSZdevF8zUHsID5p8
+      command-timeout-minutes: '180'
+      lfs: false
+      verbose-logs: false
+      use-shallow-clones: false
+      cache-on-agents: true
+      submodules: false
+      ssh-key-applies-to-submodules: true
+      fetch-all: false
+      viewer:
+        com.atlassian.bamboo.plugins.atlassian-bamboo-plugin-git:githubViewer: {}
+
+triggers:
+  - polling:
+      period: '180'
+
+branches:
+  create: manually
+  delete: never
+  link-to-jira: true
+
+notifications: []
+
+labels: []
+
+dependencies:
+  require-all-stages-passing: false
+  enabled-for-branches: true
+  block-strategy: none
+  plans: []
+
+other:
+  concurrent-build-plugin: system-default
+
+plan-permissions:
+  - roles:
+    - logged-in
+    - anonymous
+    permissions:
+    - view
+  - users:
+    - bamboo14344
+    permissions:
+    - view
+    - edit
+    - build
+    - clone
+    - admin
+    - view-configuration
