@@ -1,6 +1,6 @@
 version: 2
 plan:
-  project-key: DEMO2
+  project-key: DEMO
   key: CONVERT
   name: Convert Helm to Marathon JSON
 
