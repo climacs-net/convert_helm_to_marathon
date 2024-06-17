@@ -84,10 +84,10 @@ def main():
     input_tgz = 'ingress-nginx-4.0.6.tgz'
     extract_path = 'extracted_chart'
     values_file = os.path.join(extract_path, 'ingress-nginx', 'values.yaml')
-    working_dir = os.getenv('BAMBOO_BUILD_WORKING_DIRECTORY')
+    working_dir = os.getenv('bamboo_build_working_directory')
 
     if working_dir is None:
-        raise EnvironmentError("BAMBOO_BUILD_WORKING_DIRECTORY environment variable is not set")
+        raise EnvironmentError("bamboo_build_working_directory environment variable is not set")
 
     output_json = os.path.join(working_dir, 'marathon.json')
     output_tgz = os.path.join(working_dir, 'converted_chart.tgz')
