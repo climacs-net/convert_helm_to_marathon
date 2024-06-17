@@ -14,14 +14,14 @@ stages:
               description: Extract and Convert Helm to Marathon JSON
               environment:
                 variables:
-                  BAMBOO_BUILD_WORKING_DIRECTORY: ${bamboo.build.working.directory}
+                  bamboo_build_working_directory: ${bamboo.build.working.directory}
               scriptBody: |
                 # Ensure the script is executable
                 chmod +x convert_helm_to_marathon.py
                 # Run the conversion script
                 python3 convert_helm_to_marathon.py
                 # Check if marathon.json is created
-                if [ -f "${bamboo.build.working.directory}/marathon.json" ]; then
+                if [ -f "${bamboo_build_working_directory}/marathon.json" ]; then
                   echo "marathon.json successfully created."
                 else
                   echo "marathon.json not found!"
@@ -31,7 +31,7 @@ stages:
               description: List Directory Contents
               scriptBody: |
                 echo "Listing contents of the build directory:"
-                ls -l ${bamboo.build.working.directory}
+                ls -l ${bamboo_build_working_directory}
 
   - name: Package and Upload
     jobs:
@@ -41,8 +41,8 @@ stages:
           - script:
               description: Package the Converted Files
               scriptBody: |
-                if [ -f "${bamboo.build.working.directory}/marathon.json" ]; then
-                  tar -czvf ${bamboo.build.working.directory}/converted_chart.tgz -C ${bamboo.build.working.directory} marathon.json
+                if [ -f "${bamboo_build_working_directory}/marathon.json" ]; then
+                  tar -czvf ${bamboo_build_working_directory}/converted_chart.tgz -C ${bamboo_build_working_directory} marathon.json
                   echo "Tarball successfully created."
                 else
                   echo "marathon.json not found!"
@@ -52,9 +52,9 @@ stages:
           - script:
               description: Upload to Nexus
               scriptBody: |
-                if [ -f "${bamboo.build.working.directory}/converted_chart.tgz" ]; then
+                if [ -f "${bamboo_build_working_directory}/converted_chart.tgz" ]; then
                   curl -u bamboonexus:VhaG0ng51mplengpASS \
-                  -T ${bamboo.build.working.directory}/converted_chart.tgz \
+                  -T ${bamboo_build_working_directory}/converted_chart.tgz \
                   http://nexusdemo.climacs.net:8081/repository/bamboodemo/ \
                   -v
                   echo "Upload to Nexus successful."
