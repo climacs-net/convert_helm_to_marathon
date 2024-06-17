@@ -24,6 +24,11 @@ stages:
                   echo "marathon.json not found!"
                   exit 1
                 fi
+          - script:
+              description: List Directory Contents
+              scriptBody: |
+                echo "Listing contents of the build directory:"
+                ls -l
 
   - name: Package and Upload
     jobs:
