@@ -86,13 +86,19 @@ def main():
     output_tgz = 'converted_chart.tgz'
 
     # Step 1: Extract the tarball
+    print("Extracting Helm chart...")
     extract_tgz(input_tgz, extract_path)
+    print("Extraction complete.")
 
     # Step 2: Convert values.yaml to Marathon JSON
+    print("Converting values.yaml to Marathon JSON...")
     convert_values_to_marathon(values_file, output_json)
+    print("Conversion complete. Created marathon.json.")
 
     # Step 3: Create a new tarball with the converted Marathon JSON
+    print("Creating tarball...")
     create_tgz(output_tgz, [output_json])
+    print("Tarball creation complete.")
 
 if __name__ == "__main__":
     main()
