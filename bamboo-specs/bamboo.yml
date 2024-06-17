@@ -18,7 +18,7 @@ stages:
                 # Run the conversion script
                 python3 convert_helm_to_marathon.py
                 # Check if marathon.json is created
-                if [ -f "marathon.json" ]; then
+                if [ -f "/home/ubuntu/bamboo-agent-home/xml-data/build-dir/DEM2-CONVERT-BC/marathon.json" ]; then
                   echo "marathon.json successfully created."
                 else
                   echo "marathon.json not found!"
@@ -28,7 +28,7 @@ stages:
               description: List Directory Contents
               scriptBody: |
                 echo "Listing contents of the build directory:"
-                ls -l
+                ls -l /home/ubuntu/bamboo-agent-home/xml-data/build-dir/DEM2-CONVERT-BC
 
   - name: Package and Upload
     jobs:
@@ -38,8 +38,8 @@ stages:
           - script:
               description: Package the Converted Files
               scriptBody: |
-                if [ -f "marathon.json" ]; then
-                  tar -czvf converted_chart.tgz marathon.json
+                if [ -f "/home/ubuntu/bamboo-agent-home/xml-data/build-dir/DEM2-CONVERT-BC/marathon.json" ]; then
+                  tar -czvf converted_chart.tgz -C /home/ubuntu/bamboo-agent-home/xml-data/build-dir/DEM2-CONVERT-BC marathon.json
                   echo "Tarball successfully created."
                 else
                   echo "marathon.json not found!"
