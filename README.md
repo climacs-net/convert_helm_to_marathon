@@ -68,4 +68,6 @@ The pipeline is defined in a YAML file and involves the following steps:
 
 ## Cost
 
-The running servers cost approximately $4.5 to $5 per day.
+The running servers cost approximately $4 to $4.5 per day.
+
+
