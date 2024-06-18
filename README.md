@@ -14,10 +14,10 @@ This repository contains the code to convert Helm charts to Marathon configurati
 The infrastructure for this project is provisioned using Terraform. The setup includes two servers (Bamboo and Nexus) with the following specifications:
 
 - **AWS t3.large instance (2 cores)**
-  - 50 GB SSD**
-  - 8 GB RAM**
-  - Elastic IP**
-  - Fully Qualified Domain Names (FQDN)**:
+  - 50 GB SSD
+  - 8 GB RAM
+  - Elastic IP
+  - Fully Qualified Domain Names (FQDN):
     - Bamboo: `bamboodemo.climacs.net`
 
 - **Nexus Server**:
