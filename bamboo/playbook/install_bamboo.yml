@@ -1,0 +1,70 @@
+---
+- name: Install Atlassian Bamboo
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Download Bamboo
+      get_url:
+        url: https://www.atlassian.com/software/bamboo/downloads/binary/atlassian-bamboo-9.6.2.tar.gz
+        dest: /tmp/atlassian-bamboo-9.6.2.tar.gz
+
+    - name: Extract Bamboo
+      unarchive:
+        src: /tmp/atlassian-bamboo-9.6.2.tar.gz
+        dest: /opt/
+        remote_src: yes
+
+    - name: Create Bamboo user
+      user:
+        name: bamboo
+        home: /home/bamboo
+        shell: /bin/bash
+        state: present
+
+    - name: Change ownership of Bamboo directory
+      file:
+        path: /opt/atlassian-bamboo-9.6.2
+        owner: bamboo
+        group: bamboo
+        state: directory
+        recurse: yes
+
+    - name: Create symlink to bamboo startup script
+      file:
+        src: /opt/atlassian-bamboo-9.6.2/bin/start-bamboo.sh
+        dest: /usr/bin/start-bamboo
+        state: link
+
+    - name: Create Bamboo systemd service file
+      copy:
+        dest: /etc/systemd/system/bamboo.service
+        content: |
+          [Unit]
+          Description=Atlassian Bamboo Server
+          After=network.target
+
+          [Service]
+          Type=forking
+          User=bamboo
+          Group=bamboo
+          ExecStart=/opt/atlassian-bamboo-9.6.2/bin/start-bamboo.sh
+          ExecStop=/opt/atlassian-bamboo-9.6.2/bin/stop-bamboo.sh
+          SuccessExitStatus=143
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd to pick up new Bamboo service
+      command: systemctl daemon-reload
+
+    - name: Enable Bamboo service to start on boot
+      systemd:
+        name: bamboo
+        enabled: yes
+
+    - name: Start Bamboo service
+      systemd:
+        name: bamboo
+        state: started

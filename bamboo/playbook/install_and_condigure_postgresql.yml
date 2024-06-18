@@ -1,0 +1,74 @@
+---
+- name: Install and configure PostgreSQL
+  hosts: all
+  become: yes
+
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    postgres_conf_path: /etc/postgresql/14/main/pg_hba.conf # Correct path to pg_hba.conf
+
+  tasks:
+    - name: Update APT package list
+      apt:
+        update_cache: yes
+
+    - name: Install PostgreSQL
+      apt:
+        name: postgresql
+        state: present
+
+    - name: Install PostgreSQL client
+      apt:
+        name: postgresql-client
+        state: present
+
+    - name: Install PostgreSQL development files
+      apt:
+        name: postgresql-server-dev-all
+        state: present
+
+    - name: Ensure PostgreSQL is started and enabled
+      systemd:
+        name: postgresql
+        enabled: yes
+        state: started
+
+    - name: Install psycopg2 dependencies
+      apt:
+        name: python3-psycopg2
+        state: present
+
+    - name: Configure PostgreSQL to use md5 password authentication
+      lineinfile:
+        path: "{{ postgres_conf_path }}"
+        regexp: '^host\s+all\s+all\s+127\.0\.0\.1/32\s+peer$'
+        line: 'host all all 127.0.0.1/32 md5'
+        state: present
+      notify: Restart PostgreSQL
+
+    - name: Configure PostgreSQL to use md5 password authentication for IPv6
+      lineinfile:
+        path: "{{ postgres_conf_path }}"
+        regexp: '^host\s+all\s+all\s+::1/128\s+peer$'
+        line: 'host all all ::1/128 md5'
+        state: present
+      notify: Restart PostgreSQL
+
+    - name: Restart PostgreSQL
+      systemd:
+        name: postgresql
+        state: restarted
+
+    - name: Set PostgreSQL password for user 'postgres'
+      command: >
+        sudo -u postgres psql -c "ALTER USER postgres PASSWORD '{{ 'your_password' | password_hash('md5') }}';"
+
+    - name: Create database
+      command: >
+        sudo -u postgres createdb mydatabase
+
+  handlers:
+    - name: Restart PostgreSQL
+      systemd:
+        name: postgresql
+        state: restarted

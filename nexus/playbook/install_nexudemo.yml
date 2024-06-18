@@ -1,0 +1,134 @@
+---
+- name: Install and configure Nexus
+  hosts: all
+  become: yes
+  vars:
+    nexus_version: "3.69.0-02"
+    nexus_user: "nexus"
+    nexus_home: "/opt/nexus"
+    nexus_data: "/opt/sonatype-work"
+    nexus_tarball: "/tmp/nexus-{{ nexus_version }}-java11-unix.tar.gz"
+
+  tasks:
+    - name: Update APT package list
+      apt:
+        update_cache: yes
+
+    - name: Install Java 11
+      apt:
+        name: openjdk-11-jdk
+        state: present
+
+    - name: Create nexus user
+      user:
+        name: "{{ nexus_user }}"
+        home: "{{ nexus_home }}"
+        shell: /bin/bash
+        state: present
+
+    - name: Copy Nexus tarball from local machine to remote
+      copy:
+        src: "/Users/climacsmbp14/Downloads/nexus-{{ nexus_version }}-java11-unix.tar.gz"
+        dest: "{{ nexus_tarball }}"
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Ensure Nexus home directory exists
+      file:
+        path: "{{ nexus_home }}"
+        state: directory
+        owner: "{{ nexus_user }}"
+        group: "{{ nexus_user }}"
+
+    - name: Extract Nexus tarball
+      unarchive:
+        src: "{{ nexus_tarball }}"
+        dest: "/opt"
+        remote_src: yes
+      become_user: root
+
+    - name: Verify extraction of Nexus directory
+      stat:
+        path: "/opt/nexus-{{ nexus_version }}"
+      register: nexus_dir
+
+    - name: Fail if Nexus directory extraction failed
+      fail:
+        msg: "Nexus directory extraction failed."
+      when: not nexus_dir.stat.exists
+
+    - name: Remove existing Nexus home directory if it exists
+      file:
+        path: "{{ nexus_home }}"
+        state: absent
+      when: nexus_dir.stat.exists
+
+    - name: Rename Nexus directory
+      command: mv "/opt/nexus-{{ nexus_version }}" "{{ nexus_home }}"
+      args:
+        creates: "{{ nexus_home }}/bin"
+      become: yes
+
+    - name: Verify Nexus home directory
+      stat:
+        path: "{{ nexus_home }}/bin"
+      register: nexus_home_bin
+
+    - name: Fail if Nexus home directory does not exist
+      fail:
+        msg: "Nexus home directory does not exist."
+      when: not nexus_home_bin.stat.exists
+
+    - name: Ensure Nexus data directory exists
+      file:
+        path: "{{ nexus_data }}"
+        state: directory
+        owner: "{{ nexus_user }}"
+        group: "{{ nexus_user }}"
+
+    - name: Create nexus.rc file
+      copy:
+        content: 'run_as_user="{{ nexus_user }}"'
+        dest: "{{ nexus_home }}/bin/nexus.rc"
+        owner: "{{ nexus_user }}"
+        group: "{{ nexus_user }}"
+
+    - name: Set ownership of Nexus directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ nexus_user }}"
+        group: "{{ nexus_user }}"
+        recurse: yes
+      with_items:
+        - "{{ nexus_home }}"
+        - "{{ nexus_data }}"
+
+    - name: Create Nexus systemd service file
+      copy:
+        content: |
+          [Unit]
+          Description=Nexus Repository Manager
+          After=network.target
+
+          [Service]
+          Type=forking
+          LimitNOFILE=65536
+          ExecStart={{ nexus_home }}/bin/nexus start
+          ExecStop={{ nexus_home }}/bin/nexus stop
+          User={{ nexus_user }}
+          Restart=on-abort
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/nexus.service
+
+    - name: Reload systemd
+      command: systemctl daemon-reload
+
+    - name: Enable and start Nexus service
+      systemd:
+        name: nexus
+        enabled: yes
+        state: started
